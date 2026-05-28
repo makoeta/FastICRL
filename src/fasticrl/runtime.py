@@ -1,86 +1,136 @@
+from json import JSONDecodeError
+from agno.run.agent import RunOutput
 from fasticrl.models.attempt import Attempt
 from fasticrl.models.learning_output import LearningOutput
 from enum import Enum
-import enum
 from fasticrl import prompts
 from typing import Callable
 from fasticrl.model_providers.model_provider import ModelProvider
-import fasticrl.prompts
 import json
 import fasticrl.models.sentinel as sentinel
 import yaml
 import tqdm
+from agno.agent import Agent
+
 
 class ICRLMode(Enum):
-    LEARNING = 1
-    EVALUATE = 2
+    LEARN = "LEARN"
+    STRATEGIZE = "STRATEGIZE"
+    EVALUATE = "EVALUATE"
 
 
 class ICRLLearner:
     def __init__(
         self,
-        model_provider: ModelProvider,
-        reward_func: Callable[[str, str], int],
-        total_episodes: int,
-        buffer: list[Attempt],
-        task_description: str,
-        tasks: list[str],
+        agent: Agent = sentinel._sentinel,
+        reward_func: Callable[[str, str], int] = sentinel._sentinel,
+        task_description: str = sentinel._sentinel,
+        tasks: list[str] = [],
+        buffer: list[Attempt] = [],
+        strategy: str = "",
     ):
-        self.model = model_provider
+        self.agent = agent
         self.reward_func = reward_func
-        self.episodes = total_episodes
         self.buffer = buffer
         self.task_description = task_description
         self.tasks = tasks
+        self.strategy = strategy
 
-        self.mode = ICRLMode.LEARNING
+        self.mode = ICRLMode.LEARN
         self.episode = 0
 
-    def _learn_step(self):
-        attempt: Attempt = self.generate_attempt_by_task(self.__present_learning_task)
+    @property
+    def __is_learnable(self) -> bool:
+        return (
+            self.agent is not sentinel._sentinel
+            and self.reward_func is not sentinel._sentinel
+            and self.task_description is not sentinel._sentinel
+        )
 
-        if attempt.reward != -1:
-            self.buffer.append(attempt)
+    def _learn_step(self, retries=3):
+
+        attempt = None
+        tries = 0
+        while attempt is None:
+            tries += 1
+            attempt: Attempt = self.generate_attempt_by_task(
+                self.__present_learning_task
+            )
+            if tries > retries:
+                break
+
+        if attempt is not None:
+            if attempt.reward != -1:
+                self.buffer.append(attempt)
+
         self.episode += 1
 
-    def auto_learn(self, rerun_tasks=False, CLI_MODE=False):
-        
-        if CLI_MODE:
-                
-            for k in tqdm.tqdm(range(self.episodes)):
-                self._learn_step()
-            return
-        for k in range(self.episodes):
+    def auto_learn(self, episodes=None, cli_mode=False):
+
+        if episodes is None:
+            episodes = len(self.tasks)
+
+        if not self.__is_learnable:
+            raise ValueError(
+                "Model, reward function, and task description must be provided for learning."
+            )
+
+        iterator = tqdm.tqdm(range(episodes)) if cli_mode else range(episodes)
+
+        for _ in iterator:
             self._learn_step()
 
+    def run(self, prompt: str, output_format="") -> RunOutput:
+        return self.agent.run(self.build_icrl_prompt(prompt, output_format))
 
-
-    def generate_attempt_by_task(
-        self, task: str = sentinel._sentinel
-    ) -> Attempt:
-
+    def generate_attempt_by_task(self, task: str = sentinel._sentinel) -> Attempt:
         if task is sentinel._sentinel:
             raise ValueError("Task must be provided")
-
-        model_out = self.model.invoke(self.__present_prompt)
+        model_out: RunOutput = self.run(prompt=self.__present_learning_task)
 
         try:
-            learning_out: LearningOutput = LearningOutput.model_validate(json.loads(model_out.output_text))
+            learning_out: LearningOutput = LearningOutput.model_validate(
+                json.loads(model_out.content)
+            )
             reward: int = self.reward_func(
                 learning_out.output,
                 f"{self.task_description}\n{self.__present_learning_task}",
             )
-            
-            return Attempt(task=self.__present_learning_task, output=learning_out.output, reward=reward)
+
+            return Attempt(
+                task=self.__present_learning_task,
+                output=learning_out.output,
+                reward=reward,
+            )
         except Exception as e:
             print(e)
+
+    def update_strategy(self, retries=3) -> bool:
+        prior_mode = self.mode
+        self.mode = ICRLMode.STRATEGIZE
+
+        tries = 0
+
+        while tries < retries:
+            tries += 1
+            try:
+                out: RunOutput = self.run("")
+
+                out_json = json.loads(out.content)
+                self.strategy = out_json["strategy"]
+                self.mode = prior_mode
+                return True
+            except JSONDecodeError as _:
+                continue
+
+        self.mode = prior_mode
+        return False
 
     @property
     def __present_learning_task(self) -> str:
         return str(self.tasks[self.episode % len(self.tasks)])
 
-    @property
-    def __present_prompt(self) -> str:
+    def build_icrl_prompt(self, prompt="", output_format="") -> str:
 
         attempts = ""
         for attempt in self.buffer:
@@ -92,29 +142,70 @@ class ICRLLearner:
 
         attempts = attempts.strip()
 
-        if self.mode == ICRLMode.LEARNING:
+        if self.mode == ICRLMode.LEARN:
             return prompts.ICRL_LEARNING_PROMPT.format(
                 attempts=attempts,
-                task=self.__present_learning_task,
+                task=prompt,
                 task_description=self.task_description,
-            )
+                strategy=self.strategy
+            ).strip()
 
         if self.mode == ICRLMode.EVALUATE:
             return prompts.ICRL_EXPLOITATION_PROMPT.format(
                 attempts=attempts,
-                task=self.__present_learning_task,
+                task=prompt,
                 task_description=self.task_description,
+                output_format=output_format,
+            ).strip()
+
+        if self.mode == ICRLMode.STRATEGIZE:
+            return prompts.ICRL_STRATEGY_PROMPT.format(
+                attempts=attempts,
+                task_description=self.task_description,
+                strategy=self.strategy,
             )
 
-        raise NotImplementedError("Mode not implemented")
+        raise NotImplementedError(f"Mode ({self.mode}) not implemented")
 
-    def save_to_file(self, path: str):
-        save_state = dict()
+    @property
+    def __save_state(self):
+        save_state: dict[any, any] = dict()
         save_state["taskDescription"] = self.task_description
-        save_state["buffer"] = [dict(a.model_dump(mode="json")) for  a in self.buffer]
+        save_state["strategy"] = self.strategy
+        save_state["buffer"] = [dict(a.model_dump(mode="json")) for a in self.buffer]
 
+        return save_state
+
+    def to_yaml(self, path: str):
         if not path.endswith(".yaml"):
             path += ".yaml"
 
         with open(path, "w") as outfile:
-            yaml.dump(save_state, outfile, default_flow_style=False)
+            yaml.dump(self.__save_state, outfile, default_flow_style=False)
+
+    @classmethod
+    def from_yaml(cls, path: str):
+        with open(path, "r") as savestate:
+            save_state = yaml.load(savestate, Loader=yaml.SafeLoader)
+
+            strategy = save_state.get("strategy", "")
+            task_description = save_state.get("taskDescription", "")
+            buffer_raw = save_state.get("buffer", [])
+            buffer: list[Attempt] = [
+                Attempt(
+                    task=saved_attempt["task"],
+                    output=saved_attempt["output"],
+                    reward=saved_attempt["reward"],
+                )
+                for saved_attempt in buffer_raw
+            ]
+
+            return ICRLLearner(
+                task_description=task_description, buffer=buffer, strategy=strategy
+            )
+
+    def evaluation_mode(self):
+        self.mode = ICRLMode.EVALUATE
+
+    def learning_mode(self):
+        self.mode = ICRLMode.LEARN
