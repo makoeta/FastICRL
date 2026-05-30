@@ -1,6 +1,6 @@
 [project]
 name = "fasticrl"
-version = "0.1.0pre"
+version = "0.1.1pre"
 description = "Easy way to create ICRL context for LLMs."
 readme = "README.md"
 authors = [

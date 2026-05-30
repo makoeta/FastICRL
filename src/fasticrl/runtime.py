@@ -1,16 +1,19 @@
+import json
+from enum import Enum
 from json import JSONDecodeError
+from typing import Callable
+
+import tqdm
+import yaml
+from agno.agent import Agent
 from agno.run.agent import RunOutput
+
+import fasticrl.models.sentinel as sentinel
+from fasticrl import prompts
+from fasticrl.model_providers.model_provider import ModelProvider
+from fasticrl.models.agent_save_state import AgentSaveState
 from fasticrl.models.attempt import Attempt
 from fasticrl.models.learning_output import LearningOutput
-from enum import Enum
-from fasticrl import prompts
-from typing import Callable
-from fasticrl.model_providers.model_provider import ModelProvider
-import json
-import fasticrl.models.sentinel as sentinel
-import yaml
-import tqdm
-from agno.agent import Agent
 
 
 class ICRLMode(Enum):
@@ -168,12 +171,10 @@ class ICRLLearner:
         raise NotImplementedError(f"Mode ({self.mode}) not implemented")
 
     @property
-    def __save_state(self):
-        save_state: dict[any, any] = dict()
-        save_state["taskDescription"] = self.task_description
-        save_state["strategy"] = self.strategy
-        save_state["buffer"] = [dict(a.model_dump(mode="json")) for a in self.buffer]
-
+    def __save_state(self) -> AgentSaveState:
+        save_state: AgentSaveState = AgentSaveState(task_description=self.task_description,
+                                                    strategy=self.strategy,
+                                                    buffer=[dict(b.model_dump(mode="json")) for b in self.buffer])
         return save_state
 
     def to_yaml(self, path: str):
@@ -181,27 +182,17 @@ class ICRLLearner:
             path += ".yaml"
 
         with open(path, "w") as outfile:
-            yaml.dump(self.__save_state, outfile, default_flow_style=False)
+            yaml.dump(self.__save_state.model_dump(mode="json"), outfile, default_flow_style=False)
 
     @classmethod
     def from_yaml(cls, path: str):
         with open(path, "r") as savestate:
             save_state = yaml.load(savestate, Loader=yaml.SafeLoader)
-
-            strategy = save_state.get("strategy", "")
-            task_description = save_state.get("taskDescription", "")
-            buffer_raw = save_state.get("buffer", [])
-            buffer: list[Attempt] = [
-                Attempt(
-                    task=saved_attempt["task"],
-                    output=saved_attempt["output"],
-                    reward=saved_attempt["reward"],
-                )
-                for saved_attempt in buffer_raw
-            ]
+            
+            agent_state: AgentSaveState = AgentSaveState.model_validate(save_state)
 
             return ICRLLearner(
-                task_description=task_description, buffer=buffer, strategy=strategy
+                task_description=agent_state.task_description, buffer=agent_state.buffer, strategy=agent_state.strategy
             )
 
     def evaluation_mode(self):
