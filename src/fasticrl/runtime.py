@@ -10,7 +10,6 @@ from agno.run.agent import RunOutput
 
 import fasticrl.models.sentinel as sentinel
 from fasticrl import prompts
-from fasticrl.model_providers.model_provider import ModelProvider
 from fasticrl.models.agent_save_state import AgentSaveState
 from fasticrl.models.attempt import Attempt
 from fasticrl.models.learning_output import LearningOutput
