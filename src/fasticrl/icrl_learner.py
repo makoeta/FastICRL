@@ -1,5 +1,4 @@
 import json
-from enum import Enum
 from json import JSONDecodeError
 from typing import Callable
 
@@ -8,18 +7,12 @@ import yaml
 from agno.agent import Agent
 from agno.run.agent import RunOutput
 
+from fasticrl.models.icrl_mode import ICRLMode
 import fasticrl.models.sentinel as sentinel
 from fasticrl import prompts
 from fasticrl.models.agent_save_state import AgentSaveState
 from fasticrl.models.attempt import Attempt
 from fasticrl.models.learning_output import LearningOutput
-
-
-class ICRLMode(Enum):
-    LEARN = "LEARN"
-    STRATEGIZE = "STRATEGIZE"
-    EVALUATE = "EVALUATE"
-
 
 class ICRLLearner:
     def __init__(
