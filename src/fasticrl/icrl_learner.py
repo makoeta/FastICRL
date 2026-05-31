@@ -163,7 +163,7 @@ class ICRLLearner:
         raise NotImplementedError(f"Mode ({self.mode}) not implemented")
 
     @property
-    def __save_state(self) -> AgentSaveState:
+    def agent_save_state(self) -> AgentSaveState:
         save_state: AgentSaveState = AgentSaveState(task_description=self.task_description,
                                                     strategy=self.strategy,
                                                     buffer=[dict(b.model_dump(mode="json")) for b in self.buffer])
@@ -174,7 +174,7 @@ class ICRLLearner:
             path += ".yaml"
 
         with open(path, "w") as outfile:
-            yaml.dump(self.__save_state.model_dump(mode="json"), outfile, default_flow_style=False)
+            yaml.dump(self.agent_save_state.model_dump(mode="json"), outfile, default_flow_style=False)
 
     @classmethod
     def from_yaml(cls, path: str):
