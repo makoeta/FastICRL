@@ -1,16 +1,11 @@
 from fasticrl.strategist.models.strategy_ouput import StrategyOutput
-import json
-from json import JSONDecodeError
 from typing import Callable
 
 import tqdm
 import yaml
-from agno.agent import Agent
 from agno.models.base import Model
-from agno.run.agent import RunOutput
 
 import fasticrl.models.sentinel as sentinel
-from fasticrl import prompts
 from fasticrl.learner.core import LearnerAgent
 from fasticrl.learner.models.learn_output import LearnerOutput
 from fasticrl.models.agent_save_state import AgentSaveState
@@ -26,13 +21,11 @@ class ICRLLearner:
         learner_model: Model,
         reward_model: Model,
         strategy_model: Model,
-        reward_func: Callable[[str, str], int] = sentinel._sentinel,
         task_description: str = sentinel._sentinel,
         tasks: list[str] = [],
         buffer: list[Attempt] = [],
         strategy: str = "",
     ):
-        self.reward_func = reward_func
         self.buffer = buffer
         self.task_description = task_description
         self.tasks = tasks
