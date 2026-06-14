@@ -9,4 +9,3 @@ class AgentSaveState(BaseModel):
     task_description: Annotated[str, Field()]
     strategy: Annotated[str, Field(default="")]
     buffer: Annotated[list[Attempt], Field(default_factory=list)]
-    
