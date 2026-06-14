@@ -15,7 +15,6 @@ from fasticrl.learner.core import LearnerAgent
 from fasticrl.learner.models.learn_output import LearnerOutput
 from fasticrl.models.agent_save_state import AgentSaveState
 from fasticrl.models.attempt import Attempt
-from fasticrl.models.icrl_mode import ICRLMode
 from fasticrl.reward.core import RewardAgent
 from fasticrl.reward.models.reward_output import RewardOutput
 from fasticrl.strategist.core import StrategistAgent
