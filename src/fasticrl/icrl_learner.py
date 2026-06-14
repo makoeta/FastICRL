@@ -43,7 +43,6 @@ class ICRLLearner:
         self.reward_agent = RewardAgent(model=reward_model)
         self.strategist_agent = StrategistAgent(model=strategy_model)
 
-        self.mode = ICRLMode.LEARN
         self.episode = 0
 
     def _learn_step(self, retries=3):
@@ -62,9 +61,6 @@ class ICRLLearner:
 
         for _ in iterator:
             self._learn_step()
-
-    def run(self, prompt: str, output_format="") -> RunOutput:
-        return self.agent.run(self.build_icrl_prompt(prompt, output_format))
 
     def __attempts_as_xml(self) -> str:
         attempts = ""
@@ -109,9 +105,6 @@ class ICRLLearner:
         )
 
     def update_strategy(self):
-        prior_mode = self.mode
-        self.mode = ICRLMode.STRATEGIZE
-
         attempts: str = self.__attempts_as_xml()
 
         strategist_out: StrategyOutput = self.strategist_agent.generate_new_strategy(
@@ -122,40 +115,9 @@ class ICRLLearner:
 
         self.strategy = strategist_out.strategy
 
-        self.mode = prior_mode
-
     @property
     def __present_learning_task(self) -> str:
         return str(self.tasks[self.episode % len(self.tasks)])
-
-    def build_icrl_prompt(self, prompt="", output_format="") -> str:
-
-        attempts = self.__attempts_as_xml()
-
-        if self.mode == ICRLMode.LEARN:
-            return prompts.ICRL_LEARNING_PROMPT.format(
-                attempts=attempts,
-                task=prompt,
-                task_description=self.task_description,
-                strategy=self.strategy,
-            ).strip()
-
-        if self.mode == ICRLMode.EVALUATE:
-            return prompts.ICRL_EXPLOITATION_PROMPT.format(
-                attempts=attempts,
-                task=prompt,
-                task_description=self.task_description,
-                output_format=output_format,
-            ).strip()
-
-        if self.mode == ICRLMode.STRATEGIZE:
-            return prompts.ICRL_STRATEGY_PROMPT.format(
-                attempts=attempts,
-                task_description=self.task_description,
-                strategy=self.strategy,
-            )
-
-        raise NotImplementedError(f"Mode ({self.mode}) not implemented")
 
     @property
     def agent_save_state(self) -> AgentSaveState:
@@ -192,11 +154,5 @@ class ICRLLearner:
                 strategy=agent_state.strategy,
                 learner_model=learner_model,
                 reward_model=reward_model,
-                strategy_model=strategy_model
+                strategy_model=strategy_model,
             )
-
-    def evaluation_mode(self):
-        self.mode = ICRLMode.EVALUATE
-
-    def learning_mode(self):
-        self.mode = ICRLMode.LEARN
