@@ -1,5 +1,4 @@
 from fasticrl.strategist.models.strategy_ouput import StrategyOutput
-from typing import Callable
 
 import tqdm
 import yaml
