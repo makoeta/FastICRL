@@ -1,4 +1,4 @@
-from fasticrl.strategist.models.strategy_ouput import StrategyOutput
+from fasticrl.strategist.models.strategy_output import StrategyOutput
 
 import tqdm
 import yaml
@@ -21,37 +21,44 @@ class ICRLLearner:
         reward_model: Model,
         strategy_model: Model,
         task_description: str = sentinel._sentinel,
-        tasks: list[str] = [],
-        buffer: list[Attempt] = [],
+        tasks: list[str] = None,
+        buffer: list[Attempt] = None,
         strategy: str = "",
     ):
-        self.buffer = buffer
+        if task_description is sentinel._sentinel:
+            raise ValueError("task_description must be provided")
+        if tasks is not None and len(tasks) == 0:
+            raise ValueError("tasks list must not be empty")
+
+        self.buffer = buffer if buffer is not None else []
         self.task_description = task_description
-        self.tasks = tasks
+        self.tasks = tasks if tasks is not None else []
         self.strategy = strategy
 
         self.learner_agent = LearnerAgent(model=learner_model)
         self.reward_agent = RewardAgent(model=reward_model)
         self.strategist_agent = StrategistAgent(model=strategy_model)
 
-        self.episode = 0
+        self.episode = len(self.buffer)
 
-    def _learn_step(self, retries=3):
+    def _learn_step(self):
         attempt: Attempt = self.generate_attempt_by_present_task()
-
         self.buffer.append(attempt)
-
         self.episode += 1
 
-    def auto_learn(self, episodes=None, cli_mode=False):
+    def auto_learn(self, episodes=None, cli_mode=False, strategy_update_interval: int = None):
+        if not self.tasks:
+            raise ValueError("tasks list is empty — nothing to learn from")
 
         if episodes is None:
             episodes = len(self.tasks)
 
         iterator = tqdm.tqdm(range(episodes)) if cli_mode else range(episodes)
 
-        for _ in iterator:
+        for i in iterator:
             self._learn_step()
+            if strategy_update_interval and (i + 1) % strategy_update_interval == 0:
+                self.update_strategy()
 
     def __attempts_as_xml(self) -> str:
         attempts = ""
@@ -82,15 +89,13 @@ class ICRLLearner:
         )
 
     def generate_attempt_by_present_task(self) -> Attempt:
-
-        task: str = self.__present_learning_task
+        task: str = self._present_learning_task
 
         learner_output: LearnerOutput = self.generate_action(task)
-
         reward_output: RewardOutput = self.generate_reward(task, learner_output)
 
         return Attempt(
-            task=self.__present_learning_task,
+            task=task,
             reward=reward_output.reward,
             output=learner_output.learning_output,
         )
@@ -107,7 +112,7 @@ class ICRLLearner:
         self.strategy = strategist_out.strategy
 
     @property
-    def __present_learning_task(self) -> str:
+    def _present_learning_task(self) -> str:
         return str(self.tasks[self.episode % len(self.tasks)])
 
     @property
@@ -134,8 +139,8 @@ class ICRLLearner:
     def from_yaml(
         cls, path: str, learner_model: Model, reward_model: Model, strategy_model: Model
     ):
-        with open(path, "r") as savestate:
-            save_state = yaml.load(savestate, Loader=yaml.SafeLoader)
+        with open(path, "r") as f:
+            save_state = yaml.load(f, Loader=yaml.SafeLoader)
 
             agent_state: AgentSaveState = AgentSaveState.model_validate(save_state)
 

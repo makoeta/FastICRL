@@ -2,7 +2,7 @@ from agno.agent import Agent
 from agno.models.base import Model
 from agno.run.agent import RunOutput
 
-from fasticrl.strategist.models.strategy_ouput import StrategyOutput
+from fasticrl.strategist.models.strategy_output import StrategyOutput
 from fasticrl.strategist.prompts import (
     ICRL_STRATEGY_INPUT_PROMPT,
     ICRL_STRATEGY_SYSTEM_PROMPT,

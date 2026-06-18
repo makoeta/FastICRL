@@ -1,15 +1,3 @@
-exploration_prompt = """
-Instruction: Examine all the <attempt>...</attempt> examples, each showing a candidate Response,
-and the Rewards for each step of the Response. Provide a response that is completely different for any
-steps from every single one of the previous attempts demonstrated in the context.
-"""
-
-exploitation_prompt = """
-Instruction: You will be given multiple <attempt>...</attempt> examples, each showing a candidate
-Response, and the Rewards for each step of the Response. Your task: Based on the previous attempts,
-try your best to produce a response that can achieve higher rewards.
-"""
-
 ICRL_LEARNING_SYSTEM_PROMPT = """
 You are an In-Context Reinforcement Learning (ICRL) agent. Your objective is to maximize cumulative reward over time by learning from feedback and dynamically balancing exploration and exploitation.
 
