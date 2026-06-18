@@ -4,4 +4,4 @@ from pydantic import BaseModel
 
 
 class LearnerOutput(BaseModel):
-    learning_output: Annotated[str, Field(description="What was learned.")]
+    learning_output: Annotated[str, Field(description="The agent's response to the task.")]
