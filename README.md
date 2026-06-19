@@ -14,16 +14,16 @@ Three LLM agents collaborate in a feedback loop:
 ┌──────────────────────────────────────────────────┐
 │                   ICRLLearner                    │
 │                                                  │
-│  Task ──► Learner ──► Output ──► Reward Agent   │
+│  Task ──► Learner ──► Output ──► Reward Agent    │
 │             ▲                         │          │
-│             │         Attempt         │          │
-│             │    (task, output, score)│          │
-│             └─────────────────────────           │
+│             │        Attempt          │          │
+│             │  (task, output, score)  │          │
+│             └─────────────────────────┘          │
 │                          │                       │
-│              (every N episodes)                  │
+│                  (every N episodes)              │
 │                          ▼                       │
-│                   Strategist                     │
-│             (refines the strategy)               │
+│                      Strategist                  │
+│                (refines the strategy)            │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -95,7 +95,7 @@ ICRLLearner(
 #### Key methods
 
 | Method | Description |
-|---|---|
+| --- | --- |
 | `auto_learn(episodes, cli_mode, strategy_update_interval)` | Run N episodes; optionally show a progress bar and refresh strategy every K steps |
 | `generate_action(task)` | Run the learner on a single task and return its output |
 | `generate_reward(task, action)` | Score a learner output with the reward agent |
