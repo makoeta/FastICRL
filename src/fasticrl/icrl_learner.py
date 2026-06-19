@@ -3,6 +3,7 @@ from fasticrl.strategist.models.strategy_output import StrategyOutput
 import tqdm
 import yaml
 from agno.models.base import Model
+from concurrent.futures import ThreadPoolExecutor
 
 import fasticrl.models.sentinel as sentinel
 from fasticrl.learner.core import LearnerAgent
@@ -46,7 +47,13 @@ class ICRLLearner:
         self.buffer.append(attempt)
         self.episode += 1
 
-    def auto_learn(self, episodes=None, cli_mode=False, strategy_update_interval: int = None):
+    def auto_learn(
+        self,
+        episodes: int = None,
+        batch_size: int = 1,
+        cli_mode: bool = False,
+        strategy_update_interval: int = None,
+    ):
         if not self.tasks:
             raise ValueError("tasks list is empty — nothing to learn from")
 
@@ -56,7 +63,26 @@ class ICRLLearner:
         iterator = tqdm.tqdm(range(episodes)) if cli_mode else range(episodes)
 
         for i in iterator:
-            self._learn_step()
+            batch_tasks = [
+                str(self.tasks[(self.episode + j) % len(self.tasks)])
+                for j in range(batch_size)
+            ]
+
+            if batch_size == 1:
+                attempts = [self._generate_attempt_for_task(batch_tasks[0])]
+            else:
+                with ThreadPoolExecutor(max_workers=batch_size) as pool:
+                    futures = {
+                        pool.submit(self._generate_attempt_for_task, task): idx
+                        for idx, task in enumerate(batch_tasks)
+                    }
+                    attempts = [None] * batch_size
+                    for future in futures:
+                        attempts[futures[future]] = future.result()
+
+            self.buffer.extend(attempts)
+            self.episode += batch_size
+
             if strategy_update_interval and (i + 1) % strategy_update_interval == 0:
                 self.update_strategy()
 
@@ -68,47 +94,39 @@ class ICRLLearner:
                 + f"\tTask: {attempt.task}\n\tOutput: {attempt.output}\n\tReward: {str(attempt.reward)}"
                 + "\n</attempt>\n"
             )
-
         return attempts.strip()
 
-    def generate_action(self, task: str):
-        attempts = self.__attempts_as_xml()
-
-        learner_output: LearnerOutput = self.learner_agent.generate_learning_output(
+    def generate_action(self, task: str) -> LearnerOutput:
+        return self.learner_agent.generate_learning_output(
             task=task,
             task_description=self.task_description,
             strategy=self.strategy,
-            buffer_as_xml=attempts,
+            buffer_as_xml=self.__attempts_as_xml(),
         )
-
-        return learner_output
 
     def generate_reward(self, task: str, action: LearnerOutput) -> RewardOutput:
         return self.reward_agent.generate_reward_output(
             task=task, output=action.learning_output
         )
 
-    def generate_attempt_by_present_task(self) -> Attempt:
-        task: str = self._present_learning_task
-
+    def _generate_attempt_for_task(self, task: str) -> Attempt:
         learner_output: LearnerOutput = self.generate_action(task)
         reward_output: RewardOutput = self.generate_reward(task, learner_output)
-
         return Attempt(
             task=task,
             reward=reward_output.reward,
             output=learner_output.learning_output,
         )
 
-    def update_strategy(self):
-        attempts: str = self.__attempts_as_xml()
+    def generate_attempt_by_present_task(self) -> Attempt:
+        return self._generate_attempt_for_task(self._present_learning_task)
 
+    def update_strategy(self):
         strategist_out: StrategyOutput = self.strategist_agent.generate_new_strategy(
             task_description=self.task_description,
             existing_strategy=self.strategy,
-            buffer_as_xml=attempts,
+            buffer_as_xml=self.__attempts_as_xml(),
         )
-
         self.strategy = strategist_out.strategy
 
     @property
@@ -117,12 +135,11 @@ class ICRLLearner:
 
     @property
     def agent_save_state(self) -> AgentSaveState:
-        save_state: AgentSaveState = AgentSaveState(
+        return AgentSaveState(
             task_description=self.task_description,
             strategy=self.strategy,
             buffer=[dict(b.model_dump(mode="json")) for b in self.buffer],
         )
-        return save_state
 
     def to_yaml(self, path: str):
         if not path.endswith(".yaml"):
@@ -141,7 +158,6 @@ class ICRLLearner:
     ):
         with open(path, "r") as f:
             save_state = yaml.load(f, Loader=yaml.SafeLoader)
-
             agent_state: AgentSaveState = AgentSaveState.model_validate(save_state)
 
             return ICRLLearner(
