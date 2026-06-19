@@ -1,7 +1,25 @@
 [project]
 name = "fasticrl"
 version = "0.3.0pre"
-description = "Easy way to create ICRL context for LLMs."
+description = "In-Context Reinforcement Learning framework for LLMs — no fine-tuning required."
+keywords = [
+    "reinforcement-learning",
+    "in-context-learning",
+    "icrl",
+    "llm",
+    "ai",
+    "agents",
+    "prompt-engineering",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+]
 readme = "README.md"
 authors = [
     { name = "Maximilian König", email = "maximilian.koenig@mein.gmx" }

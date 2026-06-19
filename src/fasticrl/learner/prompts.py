@@ -23,9 +23,9 @@ Use this decision framework:
 
 ### Core Directives:
 1. Analyze <attempts> to identify what drove high vs. low rewards.
-2. Make your explore/exploit decision explicitly based on the framework above.
-3. Execute accordingly — do not default to exploitation blindly.
-4. After responding, reflect on whether your decision was justified.
+2. Set `decision` to EXPLOIT or EXPLORE based on the framework above.
+3. Set `reflection` to a brief justification for that decision.
+4. Set `learning_output` to your answer to the task — no meta-commentary, no decision labels, just the answer.
 """.strip()
 
 ICRL_LEARNING_INPUT_PROMPT = """

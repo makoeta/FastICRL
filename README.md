@@ -39,8 +39,12 @@ Each agent can be backed by a different model — e.g. a cheap model for reward,
 
 ## Installation
 
+Clone the repo and install with [uv](https://github.com/astral-sh/uv):
+
 ```bash
-pip install fasticrl
+git clone https://github.com/your-username/FastICRL.git
+cd FastICRL
+uv sync
 ```
 
 Requires Python ≥ 3.13.
@@ -67,8 +71,8 @@ learner = ICRLLearner(
     ],
 )
 
-# Run 3 episodes automatically
-learner.auto_learn(episodes=3, cli_mode=True)
+# Run 3 episodes, 2 tasks in parallel per episode
+learner.auto_learn(episodes=3, batch_size=2, cli_mode=True)
 
 # Inspect what the agent learned
 print(learner.strategy)
@@ -96,7 +100,7 @@ ICRLLearner(
 
 | Method | Description |
 | --- | --- |
-| `auto_learn(episodes, cli_mode, strategy_update_interval)` | Run N episodes; optionally show a progress bar and refresh strategy every K steps |
+| `auto_learn(episodes, batch_size, cli_mode, strategy_update_interval)` | Run N episodes; `batch_size > 1` runs that many tasks in parallel per episode using a thread pool; optionally show a progress bar and refresh strategy every K steps |
 | `generate_action(task)` | Run the learner on a single task and return its output |
 | `generate_reward(task, action)` | Score a learner output with the reward agent |
 | `generate_attempt_by_present_task()` | Single step: generate + score the current task |
