@@ -39,12 +39,21 @@ Each agent can be backed by a different model — e.g. a cheap model for reward,
 
 ## Installation
 
-Clone the repo and install with [uv](https://github.com/astral-sh/uv):
+```bash
+pip install fasticrl
+```
+
+Or with [uv](https://github.com/astral-sh/uv):
 
 ```bash
-git clone https://github.com/your-username/FastICRL.git
-cd FastICRL
-uv sync
+uv add fasticrl
+```
+
+Model provider extras (install whichever you use):
+
+```bash
+pip install "fasticrl[openai]"   # OpenAI
+pip install "fasticrl[ollama]"   # Ollama (local models)
 ```
 
 Requires Python ≥ 3.13.
