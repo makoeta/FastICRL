@@ -1,8 +1,13 @@
 # FastICRL
 
-[![PyPI version](https://img.shields.io/pypi/v/fasticrl.svg)](https://pypi.org/project/fasticrl/)
-[![Python](https://img.shields.io/pypi/pyversions/fasticrl.svg)](https://pypi.org/project/fasticrl/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <a href="https://pypi.org/project/fasticrl/"><img src="https://img.shields.io/pypi/v/fasticrl.svg" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/fasticrl/"><img src="https://img.shields.io/pypi/pyversions/fasticrl.svg" alt="Python"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/no%20fine--tuning-required-brightgreen" alt="No fine-tuning required">
+  <img src="https://img.shields.io/badge/no%20GPU-required-blue" alt="No GPU required">
+  <a href="https://github.com/agno-agi/agno"><img src="https://img.shields.io/badge/powered%20by-agno-8A2BE2" alt="Powered by agno"></a>
+</p>
 
 **In-Context Reinforcement Learning for LLMs — no fine-tuning, no gradient updates, no GPU.**
 
