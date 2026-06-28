@@ -1,8 +1,12 @@
 # FastICRL
 
-**In-Context Reinforcement Learning for LLMs — no fine-tuning, no gradient updates.**
+[![PyPI version](https://img.shields.io/pypi/v/fasticrl.svg)](https://pypi.org/project/fasticrl/)
+[![Python](https://img.shields.io/pypi/pyversions/fasticrl.svg)](https://pypi.org/project/fasticrl/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-FastICRL implements the ICRL paradigm from the paper [*Reward Is Enough: LLMs Are In-Context Reinforcement Learners*](https://arxiv.org/abs/2506.06303) (Song et al., 2025). A learner LLM improves its outputs purely by reading its own history of attempts and rewards inside the context window, guided by a meta-cognitive strategist.
+**In-Context Reinforcement Learning for LLMs — no fine-tuning, no gradient updates, no GPU.**
+
+FastICRL implements the ICRL paradigm from [*Reward Is Enough: LLMs Are In-Context Reinforcement Learners*](https://arxiv.org/abs/2506.06303) (Song et al., 2025). A learner LLM improves its outputs purely by reading its own history of attempts and rewards inside the context window — guided by a meta-cognitive strategist. No training, no infrastructure, just inference.
 
 ---
 
@@ -80,8 +84,8 @@ learner = ICRLLearner(
     ],
 )
 
-# Run 3 episodes, 2 tasks in parallel per episode
-learner.auto_learn(episodes=3, batch_size=2, cli_mode=True)
+# Run 3 episodes, update strategy every 2 steps, show progress bar
+learner.auto_learn(episodes=3, batch_size=2, cli_mode=True, strategy_update_interval=2)
 
 # Inspect what the agent learned
 print(learner.strategy)
@@ -109,7 +113,7 @@ ICRLLearner(
 
 | Method | Description |
 | --- | --- |
-| `auto_learn(episodes, batch_size, cli_mode, strategy_update_interval)` | Run N episodes; `batch_size > 1` runs that many tasks in parallel per episode using a thread pool; optionally show a progress bar and refresh strategy every K steps |
+| `auto_learn(episodes, batch_size, cli_mode, strategy_update_interval)` | Run N episodes. `batch_size > 1` parallelizes tasks with a thread pool. `cli_mode=True` shows a progress bar. `strategy_update_interval=K` refreshes the strategy every K episodes. |
 | `generate_action(task)` | Run the learner on a single task and return its output |
 | `generate_reward(task, action)` | Score a learner output with the reward agent |
 | `generate_attempt_by_present_task()` | Single step: generate + score the current task |
@@ -155,11 +159,21 @@ Any [agno](https://github.com/agno-agi/agno)-compatible model works.
 
 ---
 
-## Based on
+## Citation
 
-> *Reward Is Enough: LLMs Are In-Context Reinforcement Learners*  
-> Kefan Song, Amir Moeini, Peng Wang, Lei Gong, Rohan Chandra, Shangtong Zhang, Yanjun Qi  
-> arXiv:2506.06303 — [https://arxiv.org/abs/2506.06303](https://arxiv.org/abs/2506.06303)
+This project is based on and inspired by the following papers:
+
+*Reward Is Enough: LLMs Are In-Context Reinforcement Learners*  
+Kefan Song, Amir Moeini, Peng Wang, Lei Gong, Rohan Chandra, Shangtong Zhang, Yanjun Qi  
+arXiv:2506.06303 — [https://arxiv.org/abs/2506.06303](https://arxiv.org/abs/2506.06303)
+
+*Large Language Models as Optimizers*  
+Chengrun Yang, Xuezhi Wang, Yifeng Lu, Hanxiao Liu, Quoc V. Le, Denny Zhou, Xinyun Chen  
+arXiv:2309.03409 — [https://arxiv.org/abs/2309.03409](https://arxiv.org/abs/2309.03409)
+
+*Prompted Policy Search: Reinforcement Learning through Linguistic and Numerical Reasoning in LLMs*  
+Yifan Zhou, Sachin Grover, Mohamed El Mistiri, Kamalesh Kalirathinam, Pratyush Kerhalkar, Swaroop Mishra, Neelesh Kumar, Sanket Gaurav, Oya Aran, Heni Ben Amor  
+NeurIPS 2025 — [https://openreview.net/forum?id=95plu1Mo20](https://openreview.net/forum?id=95plu1Mo20)
 
 ---
 
