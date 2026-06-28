@@ -1,8 +1,8 @@
 # FastICRL
 
 <p align="center">
-  <a href="https://pypi.org/project/fasticrl/"><img src="https://img.shields.io/pypi/v/fasticrl.svg" alt="PyPI version"></a>
-  <a href="https://pypi.org/project/fasticrl/"><img src="https://img.shields.io/pypi/pyversions/fasticrl.svg" alt="Python"></a>
+  <a href="https://pypi.org/project/fasticrl/"><img src="https://img.shields.io/pypi/v/fasticrl" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/fasticrl/"><img src="https://img.shields.io/pypi/pyversions/fasticrl" alt="Python"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/no%20fine--tuning-required-brightgreen" alt="No fine-tuning required">
   <img src="https://img.shields.io/badge/no%20GPU-required-blue" alt="No GPU required">
@@ -11,7 +11,7 @@
 
 **In-Context Reinforcement Learning for LLMs — no fine-tuning, no gradient updates, no GPU.**
 
-FastICRL implements the ICRL paradigm from [*Reward Is Enough: LLMs Are In-Context Reinforcement Learners*](https://arxiv.org/abs/2506.06303) (Song et al., 2025). A learner LLM improves its outputs purely by reading its own history of attempts and rewards inside the context window — guided by a meta-cognitive strategist. No training, no infrastructure, just inference.
+FastICRL implements the ICRL paradigm from [_Reward Is Enough: LLMs Are In-Context Reinforcement Learners_](https://arxiv.org/abs/2506.06303) (Song et al., 2025). A learner LLM improves its outputs purely by reading its own history of attempts and rewards inside the context window — guided by a meta-cognitive strategist. No training, no infrastructure, just inference.
 
 ---
 
@@ -36,11 +36,11 @@ Three LLM agents collaborate in a feedback loop:
 └──────────────────────────────────────────────────┘
 ```
 
-| Agent | Role |
-| --- | --- |
-| **Learner** | Generates task outputs; balances exploration vs. exploitation based on reward history |
-| **Reward** | Scores each output on a 0–10 scale (acts as the reward function) |
-| **Strategist** | Analyzes past attempts to synthesize actionable strategies for future episodes |
+| Agent          | Role                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------- |
+| **Learner**    | Generates task outputs; balances exploration vs. exploitation based on reward history |
+| **Reward**     | Scores each output on a 0–10 scale (acts as the reward function)                      |
+| **Strategist** | Analyzes past attempts to synthesize actionable strategies for future episodes        |
 
 Each agent can be backed by a different model — e.g. a cheap model for reward, a powerful one for the learner.
 
@@ -116,15 +116,15 @@ ICRLLearner(
 
 #### Key methods
 
-| Method | Description |
-| --- | --- |
+| Method                                                                 | Description                                                                                                                                                                         |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `auto_learn(episodes, batch_size, cli_mode, strategy_update_interval)` | Run N episodes. `batch_size > 1` parallelizes tasks with a thread pool. `cli_mode=True` shows a progress bar. `strategy_update_interval=K` refreshes the strategy every K episodes. |
-| `generate_action(task)` | Run the learner on a single task and return its output |
-| `generate_reward(task, action)` | Score a learner output with the reward agent |
-| `generate_attempt_by_present_task()` | Single step: generate + score the current task |
-| `update_strategy()` | Ask the strategist to refine the strategy from the current buffer |
-| `to_yaml(path)` | Persist the full agent state (buffer + strategy) to a YAML file |
-| `ICRLLearner.from_yaml(path, ...)` | Resume from a saved state |
+| `generate_action(task)`                                                | Run the learner on a single task and return its output                                                                                                                              |
+| `generate_reward(task, action)`                                        | Score a learner output with the reward agent                                                                                                                                        |
+| `generate_attempt_by_present_task()`                                   | Single step: generate + score the current task                                                                                                                                      |
+| `update_strategy()`                                                    | Ask the strategist to refine the strategy from the current buffer                                                                                                                   |
+| `to_yaml(path)`                                                        | Persist the full agent state (buffer + strategy) to a YAML file                                                                                                                     |
+| `ICRLLearner.from_yaml(path, ...)`                                     | Resume from a saved state                                                                                                                                                           |
 
 ---
 
@@ -168,15 +168,15 @@ Any [agno](https://github.com/agno-agi/agno)-compatible model works.
 
 This project is based on and inspired by the following papers:
 
-*Reward Is Enough: LLMs Are In-Context Reinforcement Learners*  
+_Reward Is Enough: LLMs Are In-Context Reinforcement Learners_  
 Kefan Song, Amir Moeini, Peng Wang, Lei Gong, Rohan Chandra, Shangtong Zhang, Yanjun Qi  
 arXiv:2506.06303 — [https://arxiv.org/abs/2506.06303](https://arxiv.org/abs/2506.06303)
 
-*Large Language Models as Optimizers*  
+_Large Language Models as Optimizers_  
 Chengrun Yang, Xuezhi Wang, Yifeng Lu, Hanxiao Liu, Quoc V. Le, Denny Zhou, Xinyun Chen  
 arXiv:2309.03409 — [https://arxiv.org/abs/2309.03409](https://arxiv.org/abs/2309.03409)
 
-*Prompted Policy Search: Reinforcement Learning through Linguistic and Numerical Reasoning in LLMs*  
+_Prompted Policy Search: Reinforcement Learning through Linguistic and Numerical Reasoning in LLMs_  
 Yifan Zhou, Sachin Grover, Mohamed El Mistiri, Kamalesh Kalirathinam, Pratyush Kerhalkar, Swaroop Mishra, Neelesh Kumar, Sanket Gaurav, Oya Aran, Heni Ben Amor  
 NeurIPS 2025 — [https://openreview.net/forum?id=95plu1Mo20](https://openreview.net/forum?id=95plu1Mo20)
 
