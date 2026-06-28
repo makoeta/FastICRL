@@ -1,6 +1,6 @@
 [project]
 name = "fasticrl"
-version = "0.3.0rc1"
+version = "1.0.0"
 description = "In-Context Reinforcement Learning framework for LLMs — no fine-tuning required."
 keywords = [
     "reinforcement-learning",
