@@ -23,10 +23,10 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-groups
 
       - name: Run tests
-        run: uv run python -m pytest test/ -q
+        run: uv run pytest test/ -q
 
   release-build:
     runs-on: ubuntu-latest
