@@ -240,8 +240,8 @@ class TestAutoLearn:
         # auto_learn runs `episodes` iterations each processing `batch_size` tasks,
         # so total attempts = episodes * batch_size
         dummy = Attempt(task="t", output="o", reward=5)
-        learner._generate_attempt_for_task = lambda task: dummy
-        learner.auto_learn(episodes=4, batch_size=2)
+        with patch.object(learner, "_generate_attempt_for_task", return_value=dummy):
+            learner.auto_learn(episodes=4, batch_size=2)
         assert len(learner.buffer) == 4 * 2
 
     def test_strategy_update_interval_triggers_update(self, learner):

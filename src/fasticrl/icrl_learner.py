@@ -1,9 +1,11 @@
 from fasticrl.strategist.models.strategy_output import StrategyOutput
 
+import math
 import tqdm
 import yaml
 from agno.models.base import Model
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 import fasticrl.models.sentinel as sentinel
 from fasticrl.learner.core import LearnerAgent
@@ -42,11 +44,6 @@ class ICRLLearner:
 
         self.episode = len(self.buffer)
 
-    def _learn_step(self):
-        attempt: Attempt = self.generate_attempt_by_present_task()
-        self.buffer.append(attempt)
-        self.episode += 1
-
     def auto_learn(
         self,
         episodes: int = None,
@@ -58,7 +55,7 @@ class ICRLLearner:
             raise ValueError("tasks list is empty — nothing to learn from")
 
         if episodes is None:
-            episodes = len(self.tasks)
+            episodes = math.ceil(len(self.tasks) / batch_size)
 
         iterator = tqdm.tqdm(range(episodes)) if cli_mode else range(episodes)
 
@@ -68,22 +65,21 @@ class ICRLLearner:
                 for j in range(batch_size)
             ]
 
+            buffer_snapshot = self.__attempts_as_xml()
+
             if batch_size == 1:
-                attempts = [self._generate_attempt_for_task(batch_tasks[0])]
+                attempts = [self._generate_attempt_for_task(batch_tasks[0], buffer_snapshot)]
             else:
                 with ThreadPoolExecutor(max_workers=batch_size) as pool:
-                    futures = {
-                        pool.submit(self._generate_attempt_for_task, task): idx
-                        for idx, task in enumerate(batch_tasks)
-                    }
-                    attempts = [None] * batch_size
-                    for future in futures:
-                        attempts[futures[future]] = future.result()
+                    attempts = list(pool.map(
+                        partial(self._generate_attempt_for_task, buffer_as_xml=buffer_snapshot),
+                        batch_tasks,
+                    ))
 
             self.buffer.extend(attempts)
             self.episode += batch_size
 
-            if strategy_update_interval and (i + 1) % strategy_update_interval == 0:
+            if strategy_update_interval is not None and strategy_update_interval > 0 and (i + 1) % strategy_update_interval == 0:
                 self.update_strategy()
 
     def __attempts_as_xml(self) -> str:
@@ -96,12 +92,12 @@ class ICRLLearner:
             )
         return attempts.strip()
 
-    def generate_action(self, task: str) -> LearnerOutput:
+    def generate_action(self, task: str, buffer_as_xml: str = None) -> LearnerOutput:
         return self.learner_agent.generate_learning_output(
             task=task,
             task_description=self.task_description,
             strategy=self.strategy,
-            buffer_as_xml=self.__attempts_as_xml(),
+            buffer_as_xml=buffer_as_xml if buffer_as_xml is not None else self.__attempts_as_xml(),
         )
 
     def generate_reward(self, task: str, action: LearnerOutput) -> RewardOutput:
@@ -109,8 +105,8 @@ class ICRLLearner:
             task=task, output=action.learning_output
         )
 
-    def _generate_attempt_for_task(self, task: str) -> Attempt:
-        learner_output: LearnerOutput = self.generate_action(task)
+    def _generate_attempt_for_task(self, task: str, buffer_as_xml: str = None) -> Attempt:
+        learner_output: LearnerOutput = self.generate_action(task, buffer_as_xml=buffer_as_xml)
         reward_output: RewardOutput = self.generate_reward(task, learner_output)
         return Attempt(
             task=task,
