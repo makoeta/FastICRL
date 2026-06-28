@@ -41,6 +41,9 @@ Homepage = "https://github.com/makoeta/FastICRL"
 Source = "https://github.com/makoeta/FastICRL"
 Issues = "https://github.com/makoeta/FastICRL/issues"
 
+[dependency-groups]
+dev = ["pytest>=8.0.0"]
+
 [build-system]
 requires = ["uv_build>=0.8.15,<0.9.0"]
 build-backend = "uv_build"
